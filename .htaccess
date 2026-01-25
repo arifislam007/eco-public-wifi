@@ -1,0 +1,25 @@
+# Apache .htaccess for Portal
+# Place this file in the portal/ directory
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Redirect HTTP to HTTPS (uncomment if using SSL)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Protect sensitive files
+<FilesMatch "^(config\.php|\.htaccess)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Prevent directory listing
+Options -Indexes
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>

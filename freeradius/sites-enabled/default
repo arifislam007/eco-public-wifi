@@ -1,0 +1,96 @@
+# FreeRADIUS Default Site Configuration
+# For Public Wi-Fi Captive Portal
+
+server default {
+
+listen {
+    type = auth
+    ipaddr = *
+    port = 0
+    limit {
+        max_connections = 16
+        lifetime = 0
+        idle_timeout = 30
+    }
+}
+
+listen {
+    ipaddr = *
+    port = 0
+    type = acct
+    limit {
+        max_connections = 16
+        lifetime = 0
+        idle_timeout = 30
+    }
+}
+
+authorize {
+    filter_username
+    preprocess
+    expiration
+    logintime
+    sql
+    pap
+    if (ok || updated) {
+        update control {
+            Auth-Type := Accept
+        }
+    }
+}
+
+authenticate {
+    Auth-Type PAP {
+        pap
+    }
+    Auth-Type CHAP {
+        chap
+    }
+    Auth-Type MS-CHAP {
+        mschap
+    }
+}
+
+preacct {
+    preprocess
+    acct_unique
+    suffix
+    files
+}
+
+accounting {
+    detail
+    unix
+    radutmp
+    sql
+    attr_filter.accounting_response
+}
+
+session {
+    radutmp
+    sql
+}
+
+post-auth {
+    update {
+        &reply: += {
+            &Reply-Message := "Welcome to Public Wi-Fi"
+        }
+    }
+    sql
+    remove_reply_message_if_eap
+    Post-Auth-Type REJECT {
+        attr_filter.access_reject
+        eap
+        remove_reply_message_if_eap
+    }
+}
+
+pre-proxy {
+}
+
+post-proxy {
+    eap
+}
+
+}

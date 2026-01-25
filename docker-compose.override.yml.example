@@ -1,0 +1,21 @@
+# Example override file for development
+# Copy to docker-compose.override.yml to use
+
+version: '3.8'
+
+services:
+  web:
+    # Mount source code for development (hot reload)
+    volumes:
+      - ./portal:/var/www/html/portal
+      - ./admin:/var/www/html/admin
+      - ./scripts:/var/www/html/scripts
+    # Enable Xdebug (optional)
+    environment:
+      XDEBUG_MODE: develop,debug
+      XDEBUG_CONFIG: client_host=host.docker.internal
+
+  mysql:
+    # Expose MySQL port for external tools
+    ports:
+      - "3306:3306"

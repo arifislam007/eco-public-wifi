@@ -1,0 +1,14 @@
+# Port override for when default ports are in use
+# Use: docker-compose -f docker-compose.yml -f docker-compose.port-override.yml up -d
+
+version: '3.8'
+
+services:
+  mysql:
+    ports:
+      - "3307:3306"  # Changed from 3306 to 3307
+
+  web:
+    ports:
+      - "8080:80"    # Changed from 80 to 8080
+      - "8443:443"   # Changed from 443 to 8443

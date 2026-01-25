@@ -1,0 +1,50 @@
+# FreeRADIUS SQL Module Configuration
+# MySQL backend for user authentication
+
+sql {
+    dialect = "mysql"
+    driver = "rlm_sql_${dialect}"
+
+    server = "localhost"
+    port = 3306
+    login = "radius"
+    password = "radius_password"
+
+    radius_db = "radius"
+
+    acct_table1 = "radacct"
+    acct_table2 = "radacct"
+
+    postauth_table = "radpostauth"
+
+    authcheck_table = "radcheck"
+    authcheck_query = "SELECT id, username, attribute, value, op FROM ${authcheck_table} WHERE username = '%{SQL-User-Name}' ORDER BY id"
+
+    authreply_table = "radreply"
+    authreply_query = "SELECT id, username, attribute, value, op FROM ${authreply_table} WHERE username = '%{SQL-User-Name}' ORDER BY id"
+
+    usergroup_table = "radusergroup"
+    usergroup_query = "SELECT groupname FROM ${usergroup_table} WHERE username = '%{SQL-User-Name}' ORDER BY priority"
+
+    deletestalesessions = yes
+
+    sqllog {
+        reference = "logfile"
+        type = detail
+        file = ${logdir}/sqllog.sql
+    }
+
+    pool {
+        start = ${thread[pool].start_servers}
+        min = ${thread[pool].min_spare_servers}
+        max = ${thread[pool].max_servers}
+        spare = ${thread[pool].max_spare_servers}
+        uses = 0
+        retry_delay = 30
+        lifetime = 0
+        idle_timeout = 60
+    }
+
+    read_clients = yes
+    client_table = "nas"
+}

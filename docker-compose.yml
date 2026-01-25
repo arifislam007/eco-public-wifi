@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mariadb:10.11
+    container_name: wifi-portal-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-radius}
+      MYSQL_USER: ${MYSQL_USER:-radius}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-radius_password}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    ports:
+      - "3306:3306"
+    networks:
+      - wifi-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FreeRADIUS Server
+  freeradius:
+    build:
+      context: ./docker/freeradius
+      dockerfile: Dockerfile
+    container_name: wifi-portal-freeradius
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_NAME: ${MYSQL_DATABASE:-radius}
+      DB_USER: ${MYSQL_USER:-radius}
+      DB_PASS: ${MYSQL_PASSWORD:-radius_password}
+    volumes:
+      - ./freeradius/radiusd.conf:/etc/freeradius/3.0/radiusd.conf:ro
+      - ./freeradius/sites-enabled/default:/etc/freeradius/3.0/sites-enabled/default:ro
+      - ./freeradius/mods-enabled/sql:/etc/freeradius/3.0/mods-enabled/sql:ro
+      - ./freeradius/clients.conf:/etc/freeradius/3.0/clients.conf:ro
+      - freeradius_logs:/var/log/freeradius
+    ports:
+      - "1812:1812/udp"
+      - "1813:1813/udp"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - wifi-network
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    command: ["freeradius", "-X"]
+
+  # PHP Application (Portal + Admin)
+  web:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: wifi-portal-web
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_NAME: ${MYSQL_DATABASE:-radius}
+      DB_USER: ${MYSQL_USER:-radius}
+      DB_PASS: ${MYSQL_PASSWORD:-radius_password}
+      RADIUS_HOST: freeradius
+      RADIUS_PORT: 1812
+      RADIUS_SECRET: ${RADIUS_SECRET:-testing123}
+      PORTAL_NAME: ${PORTAL_NAME:-Community Wi-Fi}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL:-support@example.com}
+    volumes:
+      - ./portal:/var/www/html/portal:ro
+      - ./admin:/var/www/html/admin:ro
+      - ./logs:/var/www/html/logs
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      freeradius:
+        condition: service_started
+    networks:
+      - wifi-network
+
+volumes:
+  mysql_data:
+    driver: local
+  freeradius_logs:
+    driver: local
+
+networks:
+  wifi-network:
+    driver: bridge

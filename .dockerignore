@@ -1,0 +1,11 @@
+.git
+.gitignore
+*.md
+logs/
+*.log
+.env
+.env.local
+docker-compose.override.yml
+node_modules/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,27 @@
+# Logs
+logs/
+*.log
+
+# Configuration (if containing sensitive data)
+portal/config.local.php
+admin/config.local.php
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+# Docker
+docker-compose.override.yml
