@@ -3,23 +3,49 @@
 
 server default {
 
+# Authentication listener - IPv4
 listen {
     type = auth
-    ipaddr = *
-    port = 0
+    ipaddr = 0.0.0.0
+    port = 1812
     limit {
-        max_connections = 16
+        max_connections = 64
         lifetime = 0
         idle_timeout = 30
     }
 }
 
+# Authentication listener - IPv6
 listen {
-    ipaddr = *
-    port = 0
-    type = acct
+    type = auth
+    ipv6addr = ::
+    port = 1812
     limit {
-        max_connections = 16
+        max_connections = 64
+        lifetime = 0
+        idle_timeout = 30
+    }
+}
+
+# Accounting listener - IPv4
+listen {
+    type = acct
+    ipaddr = 0.0.0.0
+    port = 1813
+    limit {
+        max_connections = 64
+        lifetime = 0
+        idle_timeout = 30
+    }
+}
+
+# Accounting listener - IPv6
+listen {
+    type = acct
+    ipv6addr = ::
+    port = 1813
+    limit {
+        max_connections = 64
         lifetime = 0
         idle_timeout = 30
     }
