@@ -115,6 +115,9 @@ CREATE TABLE IF NOT EXISTS admin_users (
     username varchar(64) NOT NULL,
     password_hash varchar(255) NOT NULL,
     email varchar(255) DEFAULT NULL,
+    role ENUM('admin', 'reseller') DEFAULT 'admin',
+    reseller_id INT DEFAULT NULL,
+    status ENUM('active', 'inactive') DEFAULT 'active',
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_login timestamp NULL DEFAULT NULL,
     PRIMARY KEY (id),
@@ -135,8 +138,8 @@ CREATE TABLE IF NOT EXISTS login_attempts (
 
 -- Sample admin user (password: admin123 - CHANGE THIS!)
 -- Password hash for 'admin123' using password_hash()
-INSERT INTO admin_users (username, password_hash, email) VALUES
-('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin@example.com')
+INSERT INTO admin_users (username, password_hash, email, role, status) VALUES
+('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin@example.com', 'admin', 'active')
 ON DUPLICATE KEY UPDATE username=username;
 
 -- Sample test user (password: test123)

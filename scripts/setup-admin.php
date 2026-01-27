@@ -35,14 +35,17 @@ try {
     
     $password_hash = hashPassword($password);
     
+    // Ensure admin_users table has all required columns
+    ensureDatabaseTables();
+    
     if ($existing) {
-        // Update existing user
-        $stmt = $pdo->prepare("UPDATE admin_users SET password_hash = ?, email = ? WHERE username = ?");
+        // Update existing user - also set role to admin
+        $stmt = $pdo->prepare("UPDATE admin_users SET password_hash = ?, email = ?, role = 'admin', status = 'active' WHERE username = ?");
         $stmt->execute([$password_hash, $email, $username]);
         echo "✓ Admin user '$username' updated successfully!\n";
     } else {
-        // Create new user
-        $stmt = $pdo->prepare("INSERT INTO admin_users (username, password_hash, email) VALUES (?, ?, ?)");
+        // Create new user with role and status
+        $stmt = $pdo->prepare("INSERT INTO admin_users (username, password_hash, email, role, status) VALUES (?, ?, ?, 'admin', 'active')");
         $stmt->execute([$username, $password_hash, $email]);
         echo "✓ Admin user '$username' created successfully!\n";
     }

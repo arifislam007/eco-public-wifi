@@ -14,6 +14,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./docker/init-db.sh:/docker-entrypoint-initdb.d/02-init-db.sh:ro
     ports:
       - "3306:3306"
     networks:
@@ -43,10 +44,8 @@ services:
       - ./freeradius/clients.conf:/etc/freeradius/3.0/clients.conf:ro
       - freeradius_logs:/var/log/freeradius
     ports:
-      - "0.0.0.0:1812:1812/udp"
-      - "0.0.0.0:1813:1813/udp"
-      - "[::]:1812:1812/udp"
-      - "[::]:1813:1813/udp"
+      - "1812:1812/udp"
+      - "1813:1813/udp"
     depends_on:
       mysql:
         condition: service_healthy
