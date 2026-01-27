@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Invalid username or password.';
             }
         } catch (PDOException $e) {
-            $error = 'Login error. Please try again.';
+            $error = 'Login error: ' . $e->getMessage();
             error_log("Admin Login Error: " . $e->getMessage());
         }
     }
