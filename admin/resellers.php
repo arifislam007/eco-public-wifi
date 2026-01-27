@@ -10,11 +10,18 @@ requireAdminLogin();
 
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/../portal/includes/auth.php';
+require_once __DIR__ . '/includes/database_setup.php';
 
 // Check if user is admin
-if ($_SESSION['admin_role'] !== 'admin') {
+if (!isset($_SESSION['admin_role']) || $_SESSION['admin_role'] !== 'admin') {
     header('Location: dashboard.php');
     exit;
+}
+
+// Auto-setup database tables
+$setup_result = setupDatabaseTables();
+if (!$setup_result['success']) {
+    $error = "Database setup error: " . $setup_result['message'];
 }
 
 $pdo = getDBConnection();
