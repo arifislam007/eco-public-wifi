@@ -10,6 +10,9 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/security.php';
 require_once __DIR__ . '/../portal/includes/auth.php';
 
+// Auto-create missing database tables on login page load
+ensureDatabaseTables();
+
 // Redirect if already logged in
 if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
     header('Location: dashboard.php');

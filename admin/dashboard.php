@@ -9,10 +9,6 @@ requireAdminLogin();
 
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/../portal/includes/auth.php';
-require_once __DIR__ . '/includes/database_setup.php';
-
-// Auto-setup database tables on dashboard load
-setupDatabaseTables();
 
 // Get current user role and reseller info
 $is_admin = (isset($_SESSION['admin_role']) && $_SESSION['admin_role'] === 'admin');

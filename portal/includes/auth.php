@@ -206,3 +206,150 @@ function getDBConnection() {
     
     return $pdo;
 }
+
+/**
+ * Check if required database tables exist, create them if not
+ * This ensures backward compatibility when new features are added
+ */
+function ensureDatabaseTables() {
+    try {
+        $pdo = getDBConnection();
+        
+        // List of required tables and their creation SQL
+        $tables = [
+            'nas' => "
+                CREATE TABLE IF NOT EXISTS nas (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    nasname VARCHAR(128) NOT NULL,
+                    shortname VARCHAR(32) DEFAULT NULL,
+                    type VARCHAR(30) DEFAULT 'other',
+                    ports INT DEFAULT NULL,
+                    secret VARCHAR(60) NOT NULL DEFAULT 'secret',
+                    server VARCHAR(64) DEFAULT NULL,
+                    community VARCHAR(50) DEFAULT NULL,
+                    description VARCHAR(200) DEFAULT 'RADIUS Client',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY nasname (nasname)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ",
+            'payment_gateways' => "
+                CREATE TABLE IF NOT EXISTS payment_gateways (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(50) NOT NULL,
+                    code VARCHAR(20) NOT NULL UNIQUE,
+                    gateway_type VARCHAR(20) NOT NULL,
+                    is_active TINYINT(1) DEFAULT 0,
+                    config JSON,
+                    test_mode TINYINT(1) DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ",
+            'sms_gateways' => "
+                CREATE TABLE IF NOT EXISTS sms_gateways (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(50) NOT NULL,
+                    code VARCHAR(20) NOT NULL UNIQUE,
+                    gateway_type VARCHAR(20) NOT NULL,
+                    is_active TINYINT(1) DEFAULT 0,
+                    config JSON,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ",
+            'wifi_packages' => "
+                CREATE TABLE IF NOT EXISTS wifi_packages (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    description TEXT,
+                    package_type ENUM('hourly', 'daily', 'custom_hours', 'custom_days') NOT NULL,
+                    duration_value INT NOT NULL,
+                    price DECIMAL(10,2) NOT NULL,
+                    is_active TINYINT(1) DEFAULT 1,
+                    sort_order INT DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ",
+            'package_orders' => "
+                CREATE TABLE IF NOT EXISTS package_orders (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    order_id VARCHAR(50) NOT NULL UNIQUE,
+                    package_id INT NOT NULL,
+                    username VARCHAR(64) DEFAULT NULL,
+                    phone VARCHAR(20) NOT NULL,
+                    amount DECIMAL(10,2) NOT NULL,
+                    payment_method VARCHAR(20) NOT NULL,
+                    payment_status ENUM('pending', 'completed', 'failed', 'cancelled') DEFAULT 'pending',
+                    transaction_id VARCHAR(100) DEFAULT NULL,
+                    voucher_code VARCHAR(50) DEFAULT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (package_id) REFERENCES wifi_packages(id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ",
+            'resellers' => "
+                CREATE TABLE IF NOT EXISTS resellers (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    email VARCHAR(100) NOT NULL UNIQUE,
+                    phone VARCHAR(20) DEFAULT NULL,
+                    address TEXT,
+                    voucher_prefix VARCHAR(10) DEFAULT NULL,
+                    commission_rate DECIMAL(5,2) DEFAULT 0.00,
+                    balance DECIMAL(10,2) DEFAULT 0.00,
+                    status ENUM('active', 'inactive', 'suspended') DEFAULT 'active',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ",
+            'reseller_transactions' => "
+                CREATE TABLE IF NOT EXISTS reseller_transactions (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    reseller_id INT NOT NULL,
+                    transaction_type ENUM('credit', 'debit') NOT NULL,
+                    amount DECIMAL(10,2) NOT NULL,
+                    description TEXT,
+                    reference_type VARCHAR(50) DEFAULT NULL,
+                    reference_id INT DEFAULT NULL,
+                    created_by INT DEFAULT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (reseller_id) REFERENCES resellers(id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            "
+        ];
+        
+        // Check and create each table
+        foreach ($tables as $tableName => $createSql) {
+            $stmt = $pdo->query("SHOW TABLES LIKE '$tableName'");
+            if ($stmt->rowCount() === 0) {
+                $pdo->exec($createSql);
+                error_log("Created missing table: $tableName");
+            }
+        }
+        
+        // Check if admin_users table needs new columns
+        $columnsToCheck = [
+            'role' => "ALTER TABLE admin_users ADD COLUMN role ENUM('admin', 'reseller') DEFAULT 'admin'",
+            'reseller_id' => "ALTER TABLE admin_users ADD COLUMN reseller_id INT DEFAULT NULL",
+            'status' => "ALTER TABLE admin_users ADD COLUMN status ENUM('active', 'inactive') DEFAULT 'active'"
+        ];
+        
+        foreach ($columnsToCheck as $column => $alterSql) {
+            try {
+                $pdo->query("SELECT $column FROM admin_users LIMIT 1");
+            } catch (PDOException $e) {
+                // Column doesn't exist, add it
+                $pdo->exec($alterSql);
+                error_log("Added missing column to admin_users: $column");
+            }
+        }
+        
+        return true;
+        
+    } catch (Exception $e) {
+        error_log("Database setup error: " . $e->getMessage());
+        return false;
+    }
+}
