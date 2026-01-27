@@ -120,8 +120,20 @@
   - User management
   - Voucher management (`admin/vouchers.php`)
   - User groups management (`admin/groups.php`)
+  - NAS/Router management (`admin/nas.php`)
   - Online users monitoring
   - Usage logs viewer
+
+#### NAS (Network Access Server) Management
+- **File**: `admin/nas.php`
+- **Features**:
+  - Add/Edit/Delete RADIUS clients (routers/APs)
+  - Support for multiple NAS types (MikroTik, OpenWRT, UniFi, Cisco, etc.)
+  - Shared secret management with generation and copy features
+  - Enable/Disable NAS without deletion
+  - View active sessions per NAS
+  - Router configuration guides (MikroTik, OpenWRT, UniFi)
+  - Dynamic client loading from database
 
 #### Online Users & Session Monitoring
 - **File**: `admin/online.php`

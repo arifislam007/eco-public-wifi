@@ -110,13 +110,31 @@ $users = $pdo->query("
                         <i class="bi bi-speedometer2"></i> Dashboard
                     </a>
                     <a href="users.php" class="list-group-item list-group-item-action active">
-                        <i class="bi bi-people"></i> Users & Vouchers
+                        <i class="bi bi-people"></i> Users
+                    </a>
+                    <a href="vouchers.php" class="list-group-item list-group-item-action">
+                        <i class="bi bi-ticket-perforated"></i> Vouchers
+                    </a>
+                    <a href="groups.php" class="list-group-item list-group-item-action">
+                        <i class="bi bi-people-fill"></i> User Groups
+                    </a>
+                    <a href="nas.php" class="list-group-item list-group-item-action">
+                        <i class="bi bi-router"></i> NAS / Routers
+                    </a>
+                    <a href="payment_gateways.php" class="list-group-item list-group-item-action">
+                        <i class="bi bi-credit-card"></i> Payment Gateways
+                    </a>
+                    <a href="sms_gateways.php" class="list-group-item list-group-item-action">
+                        <i class="bi bi-chat-dots"></i> SMS Gateways
                     </a>
                     <a href="online.php" class="list-group-item list-group-item-action">
                         <i class="bi bi-circle-fill text-success"></i> Online Users
                     </a>
                     <a href="logs.php" class="list-group-item list-group-item-action">
                         <i class="bi bi-clock-history"></i> Usage Logs
+                    </a>
+                    <a href="settings.php" class="list-group-item list-group-item-action">
+                        <i class="bi bi-gear"></i> Settings
                     </a>
                 </div>
             </div>

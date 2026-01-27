@@ -45,6 +45,11 @@ sql {
         idle_timeout = 60
     }
 
+    # Enable reading NAS clients from database
+    # This allows dynamic client management from the admin panel
     read_clients = yes
     client_table = "nas"
+    
+    # Client query - reads active NAS entries from database
+    client_query = "SELECT id, nasname, shortname, type, secret, server FROM ${client_table} WHERE status = 'active'"
 }

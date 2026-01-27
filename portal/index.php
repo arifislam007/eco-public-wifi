@@ -399,6 +399,15 @@ $current_lang = getCurrentLanguage();
                                 <?php echo htmlspecialchars(SUPPORT_EMAIL); ?>
                             </small>
                         </div>
+
+                        <!-- Buy Package Option -->
+                        <div class="mt-4 pt-3 border-top">
+                            <p class="text-muted mb-2">Don't have an account?</p>
+                            <a href="packages.php" class="btn btn-success w-100">
+                                <i class="bi bi-cart"></i> Buy WiFi Package
+                            </a>
+                            <small class="text-muted d-block mt-1">Starting from ৳15</small>
+                        </div>
                     </div>
                 </div>
 

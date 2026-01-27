@@ -10,14 +10,32 @@ requireAdminLogin();
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/../portal/includes/auth.php';
 
+// Get current user role and reseller info
+$is_admin = (isset($_SESSION['admin_role']) && $_SESSION['admin_role'] === 'admin');
+$reseller_id = $_SESSION['reseller_id'] ?? null;
+
 // Get statistics
 try {
     $pdo = getDBConnection();
     
-    // Total users
-    $total_users = $pdo->query("SELECT COUNT(DISTINCT username) FROM radcheck")->fetchColumn();
+    // Build WHERE clause for reseller filtering
+    $where_clause = '';
+    $params = [];
+    if (!$is_admin && $reseller_id) {
+        $where_clause = ' WHERE reseller_id = ? ';
+        $params = [$reseller_id];
+    }
     
-    // Active sessions (users logged in today)
+    // Total users (created by this reseller or all for admin)
+    if ($is_admin) {
+        $total_users = $pdo->query("SELECT COUNT(DISTINCT username) FROM radcheck")->fetchColumn();
+    } else {
+        $stmt = $pdo->prepare("SELECT COUNT(DISTINCT username) FROM radcheck WHERE reseller_id = ?");
+        $stmt->execute([$reseller_id]);
+        $total_users = $stmt->fetchColumn();
+    }
+    
+    // Active sessions
     $active_sessions = $pdo->query("
         SELECT COUNT(DISTINCT username) 
         FROM radacct 
@@ -38,6 +56,14 @@ try {
         FROM login_attempts 
         WHERE attempt_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
     ")->fetchColumn();
+    
+    // Get reseller info if logged in as reseller
+    $reseller_info = null;
+    if (!$is_admin && $reseller_id) {
+        $stmt = $pdo->prepare("SELECT * FROM resellers WHERE id = ?");
+        $stmt->execute([$reseller_id]);
+        $reseller_info = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
     
 } catch (PDOException $e) {
     error_log("Dashboard Error: " . $e->getMessage());
@@ -60,10 +86,15 @@ try {
     <nav class="navbar navbar-dark bg-primary">
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1">
-                <i class="bi bi-wifi"></i> Wi-Fi Portal Admin
+                <i class="bi bi-wifi"></i> Wi-Fi Portal <?php echo $is_admin ? 'Admin' : 'Reseller'; ?>
             </span>
             <div>
-                <span class="text-white me-3">Welcome, <?php echo htmlspecialchars($_SESSION['admin_username']); ?></span>
+                <span class="text-white me-3">
+                    Welcome, <?php echo htmlspecialchars($_SESSION['admin_username']); ?>
+                    <?php if (!$is_admin && $reseller_info): ?>
+                        (<?php echo htmlspecialchars($reseller_info['reseller_code']); ?>)
+                    <?php endif; ?>
+                </span>
                 <a href="logout.php" class="btn btn-outline-light btn-sm">Logout</a>
             </div>
         </div>
@@ -77,14 +108,31 @@ try {
                         <i class="bi bi-speedometer2"></i> Dashboard
                     </a>
                     <a href="users.php" class="list-group-item list-group-item-action">
-                        <i class="bi bi-people"></i> Users
+                        <i class="bi bi-people"></i> My Users
                     </a>
                     <a href="vouchers.php" class="list-group-item list-group-item-action">
-                        <i class="bi bi-ticket-perforated"></i> Vouchers
+                        <i class="bi bi-ticket-perforated"></i> My Vouchers
+                    </a>
+                    <?php if ($is_admin): ?>
+                    <a href="packages.php" class="list-group-item list-group-item-action">
+                        <i class="bi bi-box-seam"></i> WiFi Packages
+                    </a>
+                    <a href="resellers.php" class="list-group-item list-group-item-action">
+                        <i class="bi bi-shop"></i> Resellers
                     </a>
                     <a href="groups.php" class="list-group-item list-group-item-action">
                         <i class="bi bi-people-fill"></i> User Groups
                     </a>
+                    <a href="nas.php" class="list-group-item list-group-item-action">
+                        <i class="bi bi-router"></i> NAS / Routers
+                    </a>
+                    <a href="payment_gateways.php" class="list-group-item list-group-item-action">
+                        <i class="bi bi-credit-card"></i> Payment Gateways
+                    </a>
+                    <a href="sms_gateways.php" class="list-group-item list-group-item-action">
+                        <i class="bi bi-chat-dots"></i> SMS Gateways
+                    </a>
+                    <?php endif; ?>
                     <a href="online.php" class="list-group-item list-group-item-action">
                         <i class="bi bi-circle-fill text-success"></i> Online Users
                     </a>
@@ -140,16 +188,28 @@ try {
                         <h5>Quick Actions</h5>
                     </div>
                     <div class="card-body">
-                        <a href="users.php?action=create" class="btn btn-primary me-2">
+                        <a href="users.php?action=create" class="btn btn-primary me-2 mb-2">
                             <i class="bi bi-person-plus"></i> Create New User
                         </a>
-                        <a href="vouchers.php" class="btn btn-success me-2">
+                        <a href="vouchers.php" class="btn btn-success me-2 mb-2">
                             <i class="bi bi-ticket-perforated"></i> Manage Vouchers
                         </a>
-                        <a href="groups.php" class="btn btn-warning me-2">
+                        <a href="packages.php" class="btn btn-info me-2 mb-2">
+                            <i class="bi bi-box-seam"></i> WiFi Packages
+                        </a>
+                        <a href="groups.php" class="btn btn-warning me-2 mb-2">
                             <i class="bi bi-people-fill"></i> User Groups
                         </a>
-                        <a href="online.php" class="btn btn-info">
+                        <a href="nas.php" class="btn btn-secondary me-2 mb-2">
+                            <i class="bi bi-router"></i> NAS / Routers
+                        </a>
+                        <a href="payment_gateways.php" class="btn btn-dark me-2 mb-2">
+                            <i class="bi bi-credit-card"></i> Payment Gateways
+                        </a>
+                        <a href="sms_gateways.php" class="btn btn-info me-2 mb-2">
+                            <i class="bi bi-chat-dots"></i> SMS Gateways
+                        </a>
+                        <a href="online.php" class="btn btn-info mb-2">
                             <i class="bi bi-eye"></i> View Online Users
                         </a>
                     </div>

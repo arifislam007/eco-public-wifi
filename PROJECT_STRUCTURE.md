@@ -31,15 +31,18 @@ wifi-portal/
 ├── admin/                         # Admin Panel
 │   ├── index.php                  # Admin login
 │   ├── dashboard.php              # Admin dashboard
-│   ├── users.php                  # User/voucher management
+│   ├── users.php                  # User management
+│   ├── vouchers.php               # Voucher management
+│   ├── groups.php                 # User groups & policies
+│   ├── nas.php                    # NAS/Router management
 │   ├── online.php                 # View online users
-│   ├── logs.php                  # Usage logs
-│   ├── settings.php              # Admin settings
-│   ├── logout.php                # Logout handler
-│   ├── config.php                # Admin config (uses portal config)
+│   ├── logs.php                   # Usage logs
+│   ├── settings.php               # Admin settings
+│   ├── logout.php                 # Logout handler
+│   ├── config.php                 # Admin config (uses portal config)
 │   └── includes/
-│       ├── auth.php              # Admin authentication
-│       └── security.php          # Security functions
+│       ├── auth.php               # Admin authentication
+│       └── security.php           # Security functions
 │
 ├── scripts/                       # CLI Utilities
 │   ├── setup-admin.php           # Create/update admin user

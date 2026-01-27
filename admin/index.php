@@ -29,20 +29,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         try {
             $pdo = getDBConnection();
-            $stmt = $pdo->prepare("SELECT id, username, password_hash FROM admin_users WHERE username = ?");
+            
+            // Check if the new columns exist
+            $columns_exist = true;
+            try {
+                $pdo->query("SELECT role, status FROM admin_users LIMIT 1");
+            } catch (PDOException $e) {
+                $columns_exist = false;
+            }
+            
+            if ($columns_exist) {
+                $stmt = $pdo->prepare("SELECT id, username, password_hash, role, reseller_id, status FROM admin_users WHERE username = ?");
+            } else {
+                $stmt = $pdo->prepare("SELECT id, username, password_hash FROM admin_users WHERE username = ?");
+            }
+            
             $stmt->execute([$username]);
             $admin = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($admin && verifyPassword($password, $admin['password_hash'])) {
-                $_SESSION['admin_logged_in'] = true;
-                $_SESSION['admin_id'] = $admin['id'];
-                $_SESSION['admin_username'] = $admin['username'];
-                
-                // Update last login
-                $pdo->prepare("UPDATE admin_users SET last_login = NOW() WHERE id = ?")->execute([$admin['id']]);
-                
-                header('Location: dashboard.php');
-                exit;
+                // Check if account is active (if status column exists)
+                if ($columns_exist && isset($admin['status']) && $admin['status'] !== 'active') {
+                    $error = 'Your account is inactive. Please contact administrator.';
+                } else {
+                    $_SESSION['admin_logged_in'] = true;
+                    $_SESSION['admin_id'] = $admin['id'];
+                    $_SESSION['admin_username'] = $admin['username'];
+                    
+                    // Set role and reseller_id if columns exist
+                    if ($columns_exist) {
+                        $_SESSION['admin_role'] = $admin['role'] ?? 'admin';
+                        $_SESSION['reseller_id'] = $admin['reseller_id'] ?? null;
+                    } else {
+                        $_SESSION['admin_role'] = 'admin';
+                        $_SESSION['reseller_id'] = null;
+                    }
+                    
+                    // Update last login
+                    $pdo->prepare("UPDATE admin_users SET last_login = NOW() WHERE id = ?")->execute([$admin['id']]);
+                    
+                    header('Location: dashboard.php');
+                    exit;
+                }
             } else {
                 $error = 'Invalid username or password.';
             }
