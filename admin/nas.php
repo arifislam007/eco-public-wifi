@@ -145,7 +145,7 @@ try {
                 UNIQUE KEY nasname (nasname),
                 KEY shortname (shortname),
                 KEY status (status)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         ");
         
         // Insert default localhost entry
